@@ -1,0 +1,30 @@
+# Sensitive files
+.env
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+venv/
+.pytest_cache/
+
+# Vector store binary files
+*.faiss
+*.pkl
+
+# Data
+data/raw/*
+!data/raw/.gitkeep
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
+frontend/.env
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
