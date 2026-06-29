@@ -3,7 +3,8 @@ import asyncio
 from datetime import datetime, timezone
 from typing import List
 
-from fastapi import APIRouter, UploadFile, File, HTTPException
+from fastapi import APIRouter, UploadFile, File, HTTPException, Header
+import shutil
 
 from app.core.logging import get_logger
 from app.loaders.document_loader import load_all_documents
@@ -19,7 +20,10 @@ MAX_FILE_SIZE = 50 * 1024 * 1024  # 50 MB
 
 
 @router.post("/upload")
-async def upload_document(file: UploadFile = File(...)):
+async def upload_document(
+    file: UploadFile = File(...),
+    x_session_id: str = Header(...)
+):
     """Upload a PDF or DOCX file, save it, and rebuild the FAISS index."""
     filename = file.filename
     ext = os.path.splitext(filename)[1].lower()
@@ -31,7 +35,8 @@ async def upload_document(file: UploadFile = File(...)):
             detail=f"Unsupported file type '{ext}'. Only .pdf and .docx are allowed.",
         )
 
-    file_path = os.path.join(DATA_DIR, filename)
+    session_data_dir = os.path.join(DATA_DIR, x_session_id)
+    file_path = os.path.join(session_data_dir, filename)
 
     try:
         # Read and validate size
@@ -43,7 +48,7 @@ async def upload_document(file: UploadFile = File(...)):
             )
 
         # Ensure data directory exists
-        os.makedirs(DATA_DIR, exist_ok=True)
+        os.makedirs(session_data_dir, exist_ok=True)
 
         # Save file
         with open(file_path, "wb") as f:
@@ -52,14 +57,14 @@ async def upload_document(file: UploadFile = File(...)):
 
         # Reload all documents and rebuild index in a thread pool
         # to avoid blocking the event loop during CPU-heavy embedding work
-        documents = await asyncio.to_thread(load_all_documents, DATA_DIR)
+        documents = await asyncio.to_thread(load_all_documents, session_data_dir)
         if not documents:
             raise HTTPException(
                 status_code=500,
                 detail="No documents could be parsed after upload.",
             )
 
-        await asyncio.to_thread(build_vector_store, documents)
+        await asyncio.to_thread(build_vector_store, documents, x_session_id)
         logger.info(f"Vector store rebuilt after uploading {filename}")
 
         return {
@@ -83,19 +88,20 @@ async def upload_document(file: UploadFile = File(...)):
 
 
 @router.get("/documents")
-async def list_documents():
+async def list_documents(x_session_id: str = Header(...)):
     """List all uploaded PDF and DOCX documents with metadata."""
-    if not os.path.isdir(DATA_DIR):
+    session_data_dir = os.path.join(DATA_DIR, x_session_id)
+    if not os.path.isdir(session_data_dir):
         return {"documents": [], "total": 0}
 
     documents: List[dict] = []
 
-    for filename in sorted(os.listdir(DATA_DIR)):
+    for filename in sorted(os.listdir(session_data_dir)):
         ext = os.path.splitext(filename)[1].lower()
         if ext not in ALLOWED_EXTENSIONS:
             continue
 
-        file_path = os.path.join(DATA_DIR, filename)
+        file_path = os.path.join(session_data_dir, filename)
         if not os.path.isfile(file_path):
             continue
 
@@ -108,18 +114,19 @@ async def list_documents():
             ).isoformat(),
         })
 
-    logger.info(f"Listed {len(documents)} document(s) in {DATA_DIR}")
+    logger.info(f"Listed {len(documents)} document(s) in {session_data_dir}")
     return {"documents": documents, "total": len(documents)}
 
 
 @router.delete("/documents/{filename}")
-async def delete_document(filename: str):
+async def delete_document(filename: str, x_session_id: str = Header(...)):
     """Delete a document and rebuild the vector store."""
     # Guard against path traversal
     if "/" in filename or "\\" in filename or ".." in filename:
         raise HTTPException(status_code=400, detail="Invalid filename.")
 
-    file_path = os.path.join(DATA_DIR, filename)
+    session_data_dir = os.path.join(DATA_DIR, x_session_id)
+    file_path = os.path.join(session_data_dir, filename)
 
     if not os.path.exists(file_path):
         raise HTTPException(status_code=404, detail=f"File '{filename}' not found.")
@@ -129,9 +136,9 @@ async def delete_document(filename: str):
         logger.info(f"Deleted document: {filename}")
 
         # Rebuild index from remaining documents
-        remaining_docs = await asyncio.to_thread(load_all_documents, DATA_DIR)
+        remaining_docs = await asyncio.to_thread(load_all_documents, session_data_dir)
         if remaining_docs:
-            await asyncio.to_thread(build_vector_store, remaining_docs)
+            await asyncio.to_thread(build_vector_store, remaining_docs, x_session_id)
             logger.info("Vector store rebuilt after deletion")
         else:
             logger.warning("No documents remaining — vector store not rebuilt")
@@ -146,3 +153,19 @@ async def delete_document(filename: str):
             status_code=500,
             detail=f"Delete failed: {str(e)}",
         )
+
+@router.post("/session/cleanup")
+async def cleanup_session(x_session_id: str = Header(...)):
+    """Delete all files and vector store for a session."""
+    session_data_dir = os.path.join(DATA_DIR, x_session_id)
+    if os.path.exists(session_data_dir):
+        shutil.rmtree(session_data_dir)
+        logger.info(f"Cleaned up data directory for session {x_session_id}")
+    
+    from app.core.config import settings
+    store_path = os.path.join(settings.VECTOR_STORE_BASE_PATH, x_session_id)
+    if os.path.exists(store_path):
+        shutil.rmtree(store_path)
+        logger.info(f"Cleaned up vector store for session {x_session_id}")
+
+    return {"status": "success", "message": "Session cleaned up successfully"}

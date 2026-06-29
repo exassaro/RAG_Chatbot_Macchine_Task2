@@ -12,7 +12,7 @@ from app.services.embeddings import get_embeddings
 logger = get_logger(__name__)
 
 
-def build_vector_store(documents: List[Document]) -> FAISS:
+def build_vector_store(documents: List[Document], session_id: str) -> FAISS:
     """Split documents into chunks, build a FAISS index, and save it to disk."""
     text_splitter = RecursiveCharacterTextSplitter(
         chunk_size=settings.CHUNK_SIZE,
@@ -24,33 +24,35 @@ def build_vector_store(documents: List[Document]) -> FAISS:
     embeddings = get_embeddings()
     vector_store = FAISS.from_documents(splits, embeddings)
 
-    vector_store.save_local(settings.VECTOR_STORE_PATH)
-    logger.info(f"FAISS index saved to {settings.VECTOR_STORE_PATH}")
+    store_path = os.path.join(settings.VECTOR_STORE_BASE_PATH, session_id)
+    vector_store.save_local(store_path)
+    logger.info(f"FAISS index saved to {store_path}")
 
     return vector_store
 
 
-def load_vector_store() -> FAISS:
+def load_vector_store(session_id: str) -> FAISS:
     """Load a FAISS index from disk."""
-    if not os.path.exists(settings.VECTOR_STORE_PATH):
+    store_path = os.path.join(settings.VECTOR_STORE_BASE_PATH, session_id)
+    if not os.path.exists(store_path):
         raise FileNotFoundError(
-            f"Vector store not found at '{settings.VECTOR_STORE_PATH}'. "
-            "Run the ingestion script first to build the index."
+            f"Vector store not found at '{store_path}'. "
+            "Please upload documents first."
         )
 
     embeddings = get_embeddings()
     vector_store = FAISS.load_local(
-        settings.VECTOR_STORE_PATH,
+        store_path,
         embeddings,
         allow_dangerous_deserialization=True,
     )
-    logger.info(f"FAISS index loaded from {settings.VECTOR_STORE_PATH}")
+    logger.info(f"FAISS index loaded from {store_path}")
     return vector_store
 
 
-def get_retriever():
+def get_retriever(session_id: str):
     """Return a retriever backed by the FAISS vector store."""
-    vector_store = load_vector_store()
+    vector_store = load_vector_store(session_id)
     return vector_store.as_retriever(
         search_kwargs={"k": settings.TOP_K_RESULTS}
     )

@@ -4,7 +4,7 @@ import { uploadDocument, getDocuments, deleteDocument } from "../services/api";
 import UploadDropzone from "./UploadDropzone";
 import DocumentList from "./DocumentList";
 
-export default function UploadPanel() {
+export default function UploadPanel({ sessionId }) {
   const [isUploading, setIsUploading] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
@@ -16,7 +16,7 @@ export default function UploadPanel() {
   const fetchDocuments = async () => {
     setIsLoadingDocs(true);
     try {
-      const docs = await getDocuments();
+      const docs = await getDocuments(sessionId);
       setDocuments(docs);
     } catch (err) {
       console.error(err);
@@ -28,7 +28,7 @@ export default function UploadPanel() {
 
   useEffect(() => {
     fetchDocuments();
-  }, []);
+  }, [sessionId]);
 
   const handleFileSelect = async (file) => {
     setIsUploading(true);
@@ -38,7 +38,7 @@ export default function UploadPanel() {
     setSuccessMessage(null);
 
     try {
-      await uploadDocument(file, (pct) => {
+      await uploadDocument(file, sessionId, (pct) => {
         setUploadProgress(pct);
         // When file bytes are fully sent, switch to processing state
         if (pct >= 100) {
@@ -60,7 +60,7 @@ export default function UploadPanel() {
 
   const handleDelete = async (filename) => {
     try {
-      await deleteDocument(filename);
+      await deleteDocument(filename, sessionId);
       await fetchDocuments();
     } catch (err) {
       setError(err.message || "Delete failed");
@@ -88,7 +88,7 @@ export default function UploadPanel() {
                 <span className="text-xs font-bold text-slate-600 uppercase tracking-wider flex items-center gap-2">
                   {isProcessing ? (
                     <>
-                      <Loader2 className="w-3 h-3 animate-spin text-indigo-600" />
+                      <Loader2 className="w-3 h-3 animate-spin text-[#1BC237]" />
                       Indexing document...
                     </>
                   ) : (
@@ -96,15 +96,15 @@ export default function UploadPanel() {
                   )}
                 </span>
                 {!isProcessing && (
-                  <span className="text-xs font-bold text-indigo-600">{uploadProgress}%</span>
+                  <span className="text-xs font-bold text-[#1BC237]">{uploadProgress}%</span>
                 )}
               </div>
               <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
                 {isProcessing ? (
-                  <div className="bg-indigo-600 h-1.5 rounded-full w-full animate-pulse" />
+                  <div className="bg-[#1BC237] h-1.5 rounded-full w-full animate-pulse" />
                 ) : (
                   <div
-                    className="bg-indigo-600 h-1.5 rounded-full transition-all duration-300 ease-out"
+                    className="bg-[#1BC237] h-1.5 rounded-full transition-all duration-300 ease-out"
                     style={{ width: `${uploadProgress}%` }}
                   />
                 )}

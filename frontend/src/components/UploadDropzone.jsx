@@ -57,24 +57,24 @@ export default function UploadDropzone({ onFileSelect, isUploading }) {
         border-2 border-dashed rounded-2xl p-8 text-center
         cursor-pointer transition-all duration-300
         ${isDragging
-          ? "border-indigo-500 bg-indigo-50/50 scale-[1.02] shadow-inner"
-          : "border-slate-300 bg-slate-50/50 hover:border-indigo-400 hover:bg-white hover:shadow-sm"
+          ? "border-[#1BC237] bg-[#DBE5DD]/20 scale-[1.02] shadow-inner"
+          : "border-slate-300 bg-slate-50/50 hover:border-[#1BC237] hover:bg-white hover:shadow-sm"
         }
         ${isUploading ? "opacity-60 cursor-not-allowed pointer-events-none grayscale-[0.2]" : ""}
       `}
     >
       {/* Decorative background blob */}
-      <div className="absolute top-0 right-0 w-24 h-24 bg-indigo-50 rounded-full blur-3xl opacity-50 group-hover:opacity-100 transition-opacity pointer-events-none" />
+      <div className="absolute top-0 right-0 w-24 h-24 bg-[#DBE5DD]/50 rounded-full blur-3xl opacity-50 group-hover:opacity-100 transition-opacity pointer-events-none" />
 
       <div className={`
         w-14 h-14 rounded-2xl flex items-center justify-center transition-all duration-300
-        ${isDragging ? "bg-indigo-600 text-white shadow-lg shadow-indigo-200 scale-110" : "bg-white text-indigo-500 shadow-sm border border-slate-100 group-hover:scale-105 group-hover:shadow-md"}
+        ${isDragging ? "bg-[#1BC237] text-white shadow-lg shadow-[#DBE5DD] scale-110" : "bg-white text-[#1BC237] shadow-sm border border-slate-100 group-hover:scale-105 group-hover:shadow-md"}
       `}>
         {isDragging ? <FileUp className="w-6 h-6" /> : <UploadCloud className="w-6 h-6" />}
       </div>
 
       <div className="relative z-10">
-        <p className={`text-sm font-semibold transition-colors ${isDragging ? "text-indigo-700" : "text-slate-700"}`}>
+        <p className={`text-sm font-semibold transition-colors ${isDragging ? "text-[#1BC237]" : "text-slate-700"}`}>
           Drag & drop document here
         </p>
         <p className="text-xs text-slate-400 mt-1.5">or click to browse from computer</p>

@@ -12,7 +12,7 @@ from app.services.vector_store import get_retriever
 logger = get_logger(__name__)
 
 
-def build_rag_chain():
+def build_rag_chain(session_id: str):
     """Build and return a LangChain retrieval chain using Groq LLM."""
     llm = ChatGroq(
         api_key=settings.GROQ_API_KEY,
@@ -31,7 +31,7 @@ def build_rag_chain():
         ("human", "{input}"),
     ])
 
-    retriever = get_retriever()
+    retriever = get_retriever(session_id)
     document_chain = create_stuff_documents_chain(llm, prompt)
     retrieval_chain = create_retrieval_chain(retriever, document_chain)
 
@@ -39,9 +39,9 @@ def build_rag_chain():
     return retrieval_chain
 
 
-def invoke_chain(question: str) -> Dict[str, Any]:
+def invoke_chain(question: str, session_id: str) -> Dict[str, Any]:
     """Invoke the RAG chain with a question and return answer + sources."""
-    chain = build_rag_chain()
+    chain = build_rag_chain(session_id)
     result = chain.invoke({"input": question})
 
     answer: str = result["answer"]

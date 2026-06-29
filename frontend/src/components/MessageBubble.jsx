@@ -5,9 +5,9 @@ import { Bot, User } from "lucide-react";
 function TypingIndicator() {
   return (
     <div className="flex items-center gap-1.5 px-3 py-2">
-      <span className="typing-dot w-2 h-2 bg-indigo-400 rounded-full" />
-      <span className="typing-dot w-2 h-2 bg-indigo-400 rounded-full" />
-      <span className="typing-dot w-2 h-2 bg-indigo-400 rounded-full" />
+      <span className="typing-dot w-2 h-2 bg-[#1BC237] rounded-full" />
+      <span className="typing-dot w-2 h-2 bg-[#1BC237] rounded-full" />
+      <span className="typing-dot w-2 h-2 bg-[#1BC237] rounded-full" />
     </div>
   );
 }
@@ -22,12 +22,12 @@ export default function MessageBubble({ role, content, sources = [], isLoading =
         {/* Avatar */}
         <div className="flex-shrink-0 mt-1">
           {isUser ? (
-            <div className="w-8 h-8 rounded-full bg-slate-200 flex items-center justify-center text-slate-500">
+            <div className="w-8 h-8 rounded-full bg-[#EBEDEC] flex items-center justify-center text-[#1A1A1A]">
               <User className="w-4 h-4" />
             </div>
           ) : (
-            <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-indigo-500 to-blue-600 flex items-center justify-center text-white shadow-sm shadow-indigo-200">
-              <Bot className="w-4 h-4" />
+            <div className="w-8 h-8 rounded-full bg-white border border-[#DBE5DD] flex items-center justify-center shadow-sm overflow-hidden p-0.5">
+              <img src="/logo.png" alt="Bot" className="w-full h-full object-contain" />
             </div>
           )}
         </div>
@@ -36,10 +36,10 @@ export default function MessageBubble({ role, content, sources = [], isLoading =
         <div className={`flex flex-col gap-2 ${isUser ? "items-end" : "items-start"}`}>
           <div
             className={`
-              relative px-5 py-3.5 text-[15px] leading-relaxed shadow-sm
+              relative px-5 py-3.5 text-[14px] leading-relaxed shadow-sm
               ${isUser 
-                ? "bg-indigo-600 text-white rounded-2xl rounded-tr-sm" 
-                : "bg-white text-slate-700 rounded-2xl rounded-tl-sm border border-slate-100"
+                ? "bg-[#1BC237] text-white rounded-[18px] rounded-br-[4px]" 
+                : "bg-[#EBEDEC] text-[#1A1A1A] rounded-[18px] rounded-bl-[4px]"
               }
             `}
           >

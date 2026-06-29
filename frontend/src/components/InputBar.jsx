@@ -35,13 +35,10 @@ export default function InputBar({ onSend, isLoading }) {
     <div className="w-full max-w-4xl mx-auto flex flex-col gap-2">
       <div 
         className={`
-          relative flex items-end gap-2 bg-slate-50 border rounded-2xl p-2 transition-all duration-200
-          ${isFocused ? "border-indigo-500 bg-white ring-4 ring-indigo-500/10 shadow-sm" : "border-slate-200 hover:border-slate-300 hover:bg-slate-50/80"}
+          relative flex items-center gap-3 bg-[#EBEDEC] rounded-[14px] px-4 py-3 transition-all duration-200
+          ${isFocused ? "ring-2 ring-[#6ED987] shadow-sm" : ""}
         `}
       >
-        <div className="hidden sm:flex self-end mb-2 ml-2 items-center justify-center text-indigo-400">
-          <Sparkles className="w-5 h-5" />
-        </div>
         
         <textarea
           ref={textareaRef}
@@ -52,17 +49,17 @@ export default function InputBar({ onSend, isLoading }) {
           onBlur={() => setIsFocused(false)}
           placeholder="Ask a question about your documents..."
           rows={1}
-          className="flex-1 max-h-[200px] resize-none bg-transparent px-2 py-2.5 text-[15px] text-slate-800 placeholder-slate-400 focus:outline-none"
+          className="flex-1 max-h-[200px] resize-none bg-transparent py-1 text-[14px] text-[#1A1A1A] placeholder-[#9A9A9A] focus:outline-none"
         />
         
         <button
           onClick={handleSend}
           disabled={!canSend}
           className={`
-            flex-shrink-0 p-3 rounded-xl flex items-center justify-center transition-all duration-200
+            flex-shrink-0 p-2.5 rounded-xl flex items-center justify-center transition-all duration-200
             ${canSend 
-              ? "bg-indigo-600 text-white shadow-md shadow-indigo-200 hover:bg-indigo-700 hover:scale-105 active:scale-95" 
-              : "bg-slate-200 text-slate-400 cursor-not-allowed"}
+              ? "bg-[#1BC237] text-white shadow-md shadow-[#DBE5DD] hover:brightness-110 hover:scale-105 active:scale-95" 
+              : "bg-[#C1C2C1] text-white cursor-not-allowed"}
           `}
         >
           {isLoading ? (

@@ -43,13 +43,16 @@ export async function checkHealth() {
   }
 }
 
-export async function uploadDocument(file, onProgress = () => {}) {
+export async function uploadDocument(file, sessionId, onProgress = () => {}) {
   try {
     const formData = new FormData();
     formData.append("file", file);
 
     const response = await api.post("/api/upload", formData, {
-      headers: { "Content-Type": "multipart/form-data" },
+      headers: { 
+        "Content-Type": "multipart/form-data",
+        "x-session-id": sessionId
+      },
       timeout: 300000, // 5 minutes — embedding + FAISS index build can be slow
       onUploadProgress: (progressEvent) => {
         const percent = Math.round(
@@ -72,9 +75,11 @@ export async function uploadDocument(file, onProgress = () => {}) {
   }
 }
 
-export async function getDocuments() {
+export async function getDocuments(sessionId) {
   try {
-    const response = await api.get("/api/documents");
+    const response = await api.get("/api/documents", {
+      headers: { "x-session-id": sessionId }
+    });
     return response.data.documents;
   } catch (error) {
     if (error.response) {
@@ -86,9 +91,11 @@ export async function getDocuments() {
   }
 }
 
-export async function deleteDocument(filename) {
+export async function deleteDocument(filename, sessionId) {
   try {
-    const response = await api.delete(`/api/documents/${encodeURIComponent(filename)}`);
+    const response = await api.delete(`/api/documents/${encodeURIComponent(filename)}`, {
+      headers: { "x-session-id": sessionId }
+    });
     return response.data;
   } catch (error) {
     if (error.response) {

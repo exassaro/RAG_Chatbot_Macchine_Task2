@@ -17,7 +17,7 @@ async def chat(request: ChatRequest):
     logger.info(f"Incoming question: {request.question}")
 
     try:
-        result = await asyncio.to_thread(invoke_chain, request.question)
+        result = await asyncio.to_thread(invoke_chain, request.question, request.session_id)
     except FileNotFoundError as e:
         logger.error(f"Vector store not found: {e}")
         raise HTTPException(

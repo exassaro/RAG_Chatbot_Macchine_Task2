@@ -30,6 +30,29 @@ export default function ChatWindow() {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
+  useEffect(() => {
+    const cleanup = () => {
+      const baseUrl = import.meta.env.VITE_API_URL || "";
+      // navigator.sendBeacon sends a POST request
+      const blob = new Blob([], { type: "application/json" });
+      navigator.sendBeacon(`${baseUrl}/api/session/cleanup`, blob);
+      
+      // Since sendBeacon doesn't easily support custom headers like x-session-id,
+      // wait, sendBeacon sends data, but we can't set headers easily. 
+      // Actually fetch with keepalive is better for sending headers.
+      fetch(`${baseUrl}/api/session/cleanup`, {
+        method: 'POST',
+        headers: { 'x-session-id': sessionId },
+        keepalive: true
+      }).catch(() => {});
+    };
+
+    window.addEventListener("beforeunload", cleanup);
+    return () => {
+      window.removeEventListener("beforeunload", cleanup);
+    };
+  }, [sessionId]);
+
   const handleSend = async (question) => {
     const trimmed = question.trim();
     if (!trimmed || isLoading) return;
@@ -83,40 +106,42 @@ export default function ChatWindow() {
   };
 
   return (
-    <div className="flex flex-col lg:flex-row h-full w-full bg-white relative">
+    <div className="flex flex-col lg:flex-row h-full w-full bg-[#FAFAFA] relative">
       
       {/* Left Chat Area */}
-      <div className="flex-1 flex flex-col min-w-0 h-full relative z-10 bg-white">
+      <div className="flex-1 flex flex-col min-w-0 h-full relative z-10 bg-[#FAFAFA] overflow-hidden">
         
         {/* Premium Header */}
-        <header className="flex-shrink-0 flex items-center justify-between px-6 py-4 bg-white/80 backdrop-blur-md border-b border-slate-100 z-20 sticky top-0">
-          <div className="flex items-center gap-4">
-            <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-indigo-500 to-blue-600 flex items-center justify-center shadow-md shadow-indigo-200">
-              <Bot className="w-6 h-6 text-white" />
-            </div>
-            <div>
-              <div className="flex items-center gap-3">
-                <h1 className="text-lg font-bold text-slate-800 tracking-tight">Knowledge Assistant</h1>
-                <span className="hidden sm:inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 text-[10px] font-semibold uppercase tracking-wider">
-                  <Zap className="w-3 h-3 fill-emerald-600 text-emerald-600" />
-                  Groq + FAISS Active
-                </span>
-              </div>
-              <p className="text-xs font-medium text-slate-500">Ask questions from your uploaded documents</p>
-            </div>
+        <header className="flex-shrink-0 flex items-center justify-between py-3 px-4 lg:px-8 bg-[#FAFAFA] z-20 sticky top-0">
+          <div className="flex items-center gap-2">
+            <img src="/logo.png" alt="AI Assist" className="w-7 h-7 object-contain" />
+            <h1 className="text-[16px] font-medium text-[#1A1A1A]">AI Assist</h1>
           </div>
-          <button
-            onClick={() => setShowUploadPanel(!showUploadPanel)}
-            className={`p-2.5 rounded-full transition-all duration-200 flex-shrink-0 ${
-              showUploadPanel 
-                ? "bg-slate-100 text-slate-600 hover:bg-slate-200" 
-                : "bg-indigo-50 text-indigo-600 hover:bg-indigo-100"
-            }`}
-            title={showUploadPanel ? "Close document manager" : "Open document manager"}
-          >
-            {showUploadPanel ? <ArrowRightToLine className="w-5 h-5" /> : <Paperclip className="w-5 h-5" />}
-          </button>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setShowUploadPanel(!showUploadPanel)}
+              className="text-[#9A9A9A] hover:text-[#1A1A1A] transition-colors"
+              title="Toggle documents"
+            >
+              <Paperclip className="w-5 h-5" />
+            </button>
+          </div>
         </header>
+
+        {/* Suggested Prompt Chips */}
+        {messages.length <= 1 && (
+          <div className="flex flex-wrap gap-2 py-4 px-4 lg:px-8">
+            {["Summarize the latest document", "What are the key takeaways?", "Find action items"].map((chip) => (
+              <button
+                key={chip}
+                onClick={() => handleSend(chip)}
+                className="px-[18px] py-[8px] text-[13px] text-[#3A3A3A] bg-[#FAFAFA] border-[1.5px] border-[#C1C2C1] rounded-full hover:border-[#1BC237] hover:bg-[#DBE5DD] transition-all duration-200"
+              >
+                {chip}
+              </button>
+            ))}
+          </div>
+        )}
 
         {/* Global Error Banner */}
         {error && (
@@ -129,7 +154,7 @@ export default function ChatWindow() {
         )}
 
         {/* Messages List */}
-        <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-6 space-y-6 scroll-smooth bg-slate-50/50">
+        <div className="flex-1 overflow-y-auto py-4 px-4 lg:px-8 space-y-6 scroll-smooth bg-[#FAFAFA]">
           {messages.map((msg) => (
             <MessageBubble
               key={msg.id}
@@ -143,7 +168,7 @@ export default function ChatWindow() {
         </div>
 
         {/* Input Area */}
-        <div className="flex-shrink-0 bg-white border-t border-slate-100 p-4 sm:px-6">
+        <div className="flex-shrink-0 bg-[#FAFAFA] pt-4 pb-6 px-4 lg:px-8">
           <InputBar onSend={handleSend} isLoading={isLoading} />
         </div>
       </div>
@@ -151,8 +176,8 @@ export default function ChatWindow() {
       {/* Right Upload Panel (Responsive Slide-over / Side panel) */}
       <div 
         className={`
-          absolute lg:relative right-0 top-0 h-full bg-white z-30
-          border-l border-slate-200 shadow-[-10px_0_30px_-15px_rgba(0,0,0,0.1)] lg:shadow-none
+          absolute lg:relative right-0 top-0 h-full bg-[#FAFAFA] z-30
+          border-l border-[#C1C2C1] shadow-[-10px_0_30px_-15px_rgba(0,0,0,0.1)] lg:shadow-none
           transition-all duration-300 cubic-bezier(0.4, 0, 0.2, 1) overflow-hidden
           ${showUploadPanel ? 'w-full sm:w-96 translate-x-0' : 'w-full sm:w-96 translate-x-full lg:w-0 lg:translate-x-0'}
         `}
@@ -166,7 +191,7 @@ export default function ChatWindow() {
             </button>
           </div>
           <div className="flex-1 overflow-y-auto">
-            <UploadPanel />
+            <UploadPanel sessionId={sessionId} />
           </div>
         </div>
       </div>
