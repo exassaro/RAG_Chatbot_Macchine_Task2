@@ -1,3 +1,4 @@
+import ReactMarkdown from "react-markdown";
 import SourceBadge from "./SourceBadge";
 import { Bot, User } from "lucide-react";
 
@@ -45,7 +46,9 @@ export default function MessageBubble({ role, content, sources = [], isLoading =
             {isLoading ? (
               <TypingIndicator />
             ) : (
-              <div className="whitespace-pre-wrap break-words">{content}</div>
+              <div className="prose prose-sm max-w-none break-words markdown-body">
+                <ReactMarkdown>{content}</ReactMarkdown>
+              </div>
             )}
           </div>
 
